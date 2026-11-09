@@ -25,19 +25,31 @@ jobs:
           set -o pipefail
           ./gradlew --no-daemon --stacktrace assembleDebug 2>&1 | tee build.log
 
-      # Публикуем APK (если собрался) и журнал сборки как релиз, чтобы их можно было скачать по ссылке
-      - name: Publish result
+      # Кладём APK (если собрался) и журнал сборки в отдельную ветку apk
+      - name: Publish to branch
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="build-${{ github.run_number }}"
+          mkdir -p out
           touch build.log
-          grep -nE "^e: |^w: .*deprecat|error:|FAILED|What went wrong|Caused by|\[ksp\]|\[Hilt\]" -A4 build.log | head -c 200000 > errors.txt || true
-          FILES="build.log errors.txt"
+          cp build.log out/
           APK=app/build/outputs/apk/debug/app-debug.apk
-          if [ -f "$APK" ]; then
-            cp "$APK" Slovarik.apk
-            FILES="$FILES Slovarik.apk"
-          fi
-          gh release create "$TAG" $FILES --title "Сборка ${{ github.run_number }}" --notes "Автоматическая сборка" --target "${{ github.sha }}"
+          if [ -f "$APK" ]; then cp "$APK" out/Slovarik.apk; fi
+          cd out
+          git init -q -b apk
+          git add -A
+          git -c user.name="github-actions" -c user.email="actions@github.com" commit -qm "Сборка ${{ github.run_number }}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" apk
+
+      # И дополнительно публикуем как релиз, чтобы APK можно было скачать по ссылке
+      - name: Publish release
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          FILES="out/build.log"
+          if [ -f out/Slovarik.apk ]; then FILES="$FILES out/Slovarik.apk"; fi
+          gh release create "$TAG" $FILES --title "Build ${{ github.run_number }}" --notes "Automatic build" --target "${{ github.sha }}"
