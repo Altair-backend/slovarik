@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Словарик</string>
+    <string name="widget_word_name">Слово дня</string>
+    <string name="widget_word_description">Случайное слово из выбранного набора или папки</string>
+    <string name="widget_progress_name">Прогресс</string>
+    <string name="widget_progress_description">Сколько слов повторить сегодня и серия дней</string>
+    <string name="widget_config_title">Настройка виджета</string>
+    <string name="channel_reminder_name">Напоминания</string>
+    <string name="channel_reminder_description">Ежедневное напоминание о повторении слов</string>
+</resources>
